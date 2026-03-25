@@ -10,6 +10,7 @@ services:
     plan: free
     runtime: docker
     dockerfilePath: ./Dockerfile
+    region: singapore
     envVars:
       - key: APP_NAME
         value: SpiceAI_Admin
@@ -18,7 +19,7 @@ services:
       - key: APP_DEBUG
         value: "false"
       - key: APP_KEY
-        generateValue: true
+        value: base64:wNJGsaAmCU/i2VVp/8s8xlh69cbap6jCNHaMgQNv7M4=
       - key: DB_CONNECTION
         value: pgsql
       - key: DATABASE_URL
