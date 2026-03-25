@@ -48,10 +48,18 @@ class VisitorController extends Controller
             'phone' => 'nullable|string|max:20',
             'email' => 'nullable|email|max:255',
             'check_in_time' => 'required|date',
-            'host_employee_id' => 'nullable|uuid|exists:employees,id',
+            'host_employee_id' => 'nullable|uuid',
             'status' => 'sometimes|in:checked_in,waiting,in_meeting,checked_out,cancelled',
             'badge_number' => 'nullable|string|max:20',
         ]);
+
+        // Resolve host_employee_id — kiosk may send a local UUID that doesn't exist in DB
+        if (!empty($validated['host_employee_id'])) {
+            $employee = \App\Models\Employee::find($validated['host_employee_id']);
+            if (!$employee) {
+                $validated['host_employee_id'] = null;
+            }
+        }
 
         $visitor = Visitor::create($validated);
 

@@ -50,7 +50,9 @@ class AppointmentController extends Controller
             'visitor_purpose' => 'nullable|string|max:255',
             'visitor_phone' => 'nullable|string|max:20',
             'visitor_email' => 'nullable|email|max:255',
-            'employee_id' => 'required|uuid|exists:employees,id',
+            'employee_id' => 'nullable|uuid',
+            'employee_name' => 'nullable|string|max:255',
+            'employee_email' => 'nullable|email|max:255',
             'date' => 'required|date',
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
@@ -60,10 +62,22 @@ class AppointmentController extends Controller
             'notes' => 'nullable|string',
         ]);
 
-        // Auto-fill employee info
-        $employee = \App\Models\Employee::findOrFail($validated['employee_id']);
-        $validated['employee_name'] = $employee->name;
-        $validated['employee_email'] = $employee->email;
+        // Find employee by ID first, then by email as fallback (kiosk may have different UUIDs)
+        $employee = null;
+        if (!empty($validated['employee_id'])) {
+            $employee = \App\Models\Employee::find($validated['employee_id']);
+        }
+        if (!$employee && !empty($validated['employee_email'])) {
+            $employee = \App\Models\Employee::where('email', $validated['employee_email'])->first();
+        }
+        if (!$employee && !empty($validated['employee_name'])) {
+            $employee = \App\Models\Employee::where('name', 'like', '%' . $validated['employee_name'] . '%')->first();
+        }
+        if ($employee) {
+            $validated['employee_id'] = $employee->id;
+            $validated['employee_name'] = $employee->name;
+            $validated['employee_email'] = $employee->email;
+        }
         $validated['created_via'] = $validated['created_via'] ?? 'manual';
 
         $appointment = Appointment::create($validated);
