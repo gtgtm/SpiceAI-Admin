@@ -77,6 +77,16 @@ class AppointmentController extends Controller
             $validated['employee_id'] = $employee->id;
             $validated['employee_name'] = $employee->name;
             $validated['employee_email'] = $employee->email;
+        } else {
+            // No employee found — return error (foreign key requires valid employee_id)
+            return response()->json([
+                'message' => 'Employee not found',
+                'tried' => [
+                    'id' => $validated['employee_id'] ?? null,
+                    'email' => $validated['employee_email'] ?? null,
+                    'name' => $validated['employee_name'] ?? null,
+                ],
+            ], 422);
         }
         $validated['created_via'] = $validated['created_via'] ?? 'manual';
 
