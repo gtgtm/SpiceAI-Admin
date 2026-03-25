@@ -22,6 +22,10 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# Frontend dev files (build output IS committed for deployment)
+# Frontend (built in Docker, not committed)
 /frontend/node_modules
 /frontend/build
+/public/static
+/public/index.html
+/public/asset-manifest.json
+/public/manifest.json

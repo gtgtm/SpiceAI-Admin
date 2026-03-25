@@ -35,10 +35,11 @@ WORKDIR /var/www/html/frontend
 RUN npm install
 RUN REACT_APP_API_URL=/api npm run build
 
-# Copy React build into Laravel public/
+# Copy React build into Laravel public/ (remove old build first to avoid cp -r nesting)
 WORKDIR /var/www/html
-RUN cp -r frontend/build/static public/static 2>/dev/null || true && \
-    cp frontend/build/index.html public/index.html 2>/dev/null || true && \
+RUN rm -rf public/static public/index.html public/asset-manifest.json public/manifest.json && \
+    cp -r frontend/build/static public/static && \
+    cp frontend/build/index.html public/index.html && \
     cp frontend/build/asset-manifest.json public/ 2>/dev/null || true && \
     cp frontend/build/manifest.json public/ 2>/dev/null || true
 
