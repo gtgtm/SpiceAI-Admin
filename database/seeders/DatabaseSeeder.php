@@ -13,6 +13,11 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        // Skip if already seeded
+        if (User::where('email', 'admin@spicejet.com')->exists()) {
+            return;
+        }
+
         // Admin user
         User::create([
             'name' => 'Admin',

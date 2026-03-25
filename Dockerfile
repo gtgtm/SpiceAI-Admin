@@ -45,8 +45,10 @@ RUN cp -r frontend/build/static public/static 2>/dev/null || true && \
 # Set permissions
 RUN chmod -R 777 storage bootstrap/cache
 
-# Expose port (Render sets $PORT)
+# Copy start script
+COPY start.sh /usr/local/bin/start.sh
+RUN chmod +x /usr/local/bin/start.sh
+
 EXPOSE 8080
 
-# Start command
-CMD ["sh", "-c", "php artisan migrate --force && php artisan db:seed --force 2>/dev/null; php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"]
+CMD ["/usr/local/bin/start.sh"]
