@@ -32,6 +32,29 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('visitors', VisitorController::class);
 });
 
+// Debug: check filesystem (TEMPORARY - remove after fixing)
+Route::get('/debug/static-files', function () {
+    $publicPath = public_path();
+    $staticPath = public_path('static');
+    $result = [
+        'public_path' => $publicPath,
+        'static_exists' => is_dir($staticPath),
+        'index_html_exists' => file_exists(public_path('index.html')),
+    ];
+    if (is_dir($staticPath . '/js')) {
+        $result['js_files'] = scandir($staticPath . '/js');
+    }
+    if (is_dir($staticPath . '/css')) {
+        $result['css_files'] = scandir($staticPath . '/css');
+    }
+    // Also check if frontend/build exists
+    $result['frontend_build_exists'] = is_dir(base_path('frontend/build'));
+    if (is_dir(base_path('frontend/build/static/js'))) {
+        $result['frontend_build_js'] = scandir(base_path('frontend/build/static/js'));
+    }
+    return response()->json($result, 200, [], JSON_PRETTY_PRINT);
+});
+
 // Kiosk API (no auth — called from iPad app)
 Route::prefix('kiosk')->group(function () {
     Route::get('/employees', [EmployeeController::class, 'index']);
