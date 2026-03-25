@@ -58,8 +58,8 @@ const Visitors: React.FC = () => {
     } catch { toast.error('Failed to delete'); }
   };
 
-  const formatTime = (dt: string) => new Date(dt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
-  const formatDate = (dt: string) => new Date(dt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  const formatTime = (dt: string) => new Date(dt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
+  const formatDate = (dt: string) => new Date(dt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', timeZone: 'Asia/Kolkata' });
 
   return (
     <div className="page">

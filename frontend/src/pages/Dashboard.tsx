@@ -19,7 +19,7 @@ const Dashboard: React.FC = () => {
   if (loading) return <div className="page-loading">Loading dashboard...</div>;
   if (!stats) return null;
 
-  const formatTime = (dt: string) => new Date(dt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const formatTime = (dt: string) => new Date(dt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 
   return (
     <div className="page">
