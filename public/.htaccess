@@ -14,6 +14,11 @@
     RewriteCond %{REQUEST_URI} (.+)/$
     RewriteRule ^ %1 [L,R=301]
 
+    # PHP files → execute directly (setup.php, index.php, etc)
+    RewriteCond %{REQUEST_FILENAME} -f
+    RewriteCond %{REQUEST_URI} \.php$
+    RewriteRule ^ - [L]
+
     # API routes → Laravel
     RewriteCond %{REQUEST_URI} ^/api
     RewriteRule ^ index.php [L]
@@ -23,6 +28,6 @@
     RewriteCond %{REQUEST_FILENAME} -d
     RewriteRule ^ - [L]
 
-    # Everything else → React SPA (index.html)
-    RewriteRule ^ index.html [L]
+    # All other routes → Laravel (which serves React SPA via fallback)
+    RewriteRule ^ index.php [L]
 </IfModule>
