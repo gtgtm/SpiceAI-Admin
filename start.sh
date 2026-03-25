@@ -26,5 +26,12 @@ php artisan migrate --force 2>&1 || echo "WARNING: Migration failed - DB may not
 echo "Seeding database..."
 php artisan db:seed --force 2>&1 || echo "WARNING: Seeding failed or already seeded"
 
+# Debug: verify React build files exist
+echo "=== Checking public/static files ==="
+ls -la public/static/js/ 2>/dev/null || echo "NO public/static/js/ directory!"
+ls -la public/static/css/ 2>/dev/null || echo "NO public/static/css/ directory!"
+echo "index.html:"
+head -1 public/index.html 2>/dev/null || echo "NO public/index.html!"
+
 echo "=== Starting server on port ${PORT:-8080} ==="
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"

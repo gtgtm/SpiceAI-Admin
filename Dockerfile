@@ -33,15 +33,22 @@ RUN composer dump-autoload --optimize
 # Build React frontend
 WORKDIR /var/www/html/frontend
 RUN npm install
-RUN REACT_APP_API_URL=/api npm run build
+RUN REACT_APP_API_URL=/api npm run build && \
+    echo "=== React build output ===" && \
+    ls -la build/static/js/ && \
+    ls -la build/static/css/
 
-# Copy React build into Laravel public/ (remove old build first to avoid cp -r nesting)
+# Copy React build into Laravel public/
 WORKDIR /var/www/html
 RUN rm -rf public/static public/index.html public/asset-manifest.json public/manifest.json && \
     cp -r frontend/build/static public/static && \
     cp frontend/build/index.html public/index.html && \
     cp frontend/build/asset-manifest.json public/ 2>/dev/null || true && \
-    cp frontend/build/manifest.json public/ 2>/dev/null || true
+    cp frontend/build/manifest.json public/ 2>/dev/null || true && \
+    echo "=== Verify public/static ===" && \
+    ls -la public/static/js/ && \
+    ls -la public/static/css/ && \
+    head -1 public/index.html
 
 # Set permissions
 RUN chmod -R 777 storage bootstrap/cache
