@@ -44,6 +44,23 @@ export const updateAppointmentStatus = (id: string, status: string) =>
 export const deleteAppointment = (id: string) =>
   client.delete(`/appointments/${id}`);
 
+// Reports
+export const getReportStats = (params?: Record<string, string>) =>
+  client.get('/reports/stats', { params });
+
+export const downloadReportCsv = async (type: string, from: string, to: string) => {
+  const res = await client.get('/reports/export', {
+    params: { type, from, to },
+    responseType: 'blob',
+  });
+  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${type}_report_${from}_to_${to}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+};
+
 // Visitors
 export const getVisitors = (params?: Record<string, string>) =>
   client.get<PaginatedResponse<Visitor>>('/visitors', { params });

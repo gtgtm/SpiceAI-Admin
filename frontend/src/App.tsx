@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard';
 import Appointments from './pages/Appointments';
 import Employees from './pages/Employees';
 import Visitors from './pages/Visitors';
+import Reports from './pages/Reports';
 import './App.css';
 
 function App() {
@@ -22,6 +23,7 @@ function App() {
             <Route path="/appointments" element={<Appointments />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/visitors" element={<Visitors />} />
+            <Route path="/reports" element={<Reports />} />
           </Route>
         </Routes>
       </BrowserRouter>

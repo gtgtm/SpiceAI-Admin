@@ -1,7 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getAppointments, updateAppointmentStatus, deleteAppointment, createAppointment, getEmployees } from '../api/endpoints';
 import type { Appointment, Employee } from '../types';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import StatusBadge from '../components/StatusBadge';
+import EmptyState from '../components/EmptyState';
+import AppointmentDetailModal from '../components/AppointmentDetailModal';
+import { SkeletonTable } from '../components/Skeleton';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { HiOutlineMagnifyingGlass, HiOutlineCalendarDays, HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi2';
+import { Icon } from '../components/Icon';
 import toast from 'react-hot-toast';
 
 const statusColors: Record<string, string> = {
@@ -23,8 +31,9 @@ const Appointments: React.FC = () => {
   const [showAll, setShowAll] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<any>({});
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const params: Record<string, string> = { page: String(page), per_page: '20' };
     if (!showAll) params.date = date;
@@ -34,20 +43,24 @@ const Appointments: React.FC = () => {
     setAppointments(res.data.data);
     setTotalPages(res.data.last_page);
     setLoading(false);
-  };
+  }, [date, filterStatus, search, page, showAll]);
 
-  useEffect(() => { fetchData(); }, [date, filterStatus, search, page, showAll]);
+  useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { getEmployees().then((r) => setEmployees(r.data)); }, []);
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const { lastRefresh, isRefreshing, refresh } = useAutoRefresh(fetchData);
+
+  const handleStatusChange = async (e: React.MouseEvent, id: string, newStatus: string) => {
+    e.stopPropagation();
     try {
       await updateAppointmentStatus(id, newStatus);
-      toast.success(`Status updated to ${newStatus}`);
+      toast.success(`Status updated to ${newStatus.replace('_', ' ')}`);
       fetchData();
     } catch { toast.error('Failed to update status'); }
   };
 
-  const handleDelete = async (apt: Appointment) => {
+  const handleDelete = async (e: React.MouseEvent, apt: Appointment) => {
+    e.stopPropagation();
     if (!window.confirm(`Delete appointment for ${apt.visitor_name}?`)) return;
     try {
       await deleteAppointment(apt.id);
@@ -78,20 +91,25 @@ const Appointments: React.FC = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1>Appointments</h1>
-        <button className="btn btn-primary" onClick={() => { setForm({ date: date, status: 'scheduled' }); setModalOpen(true); }}>
-          + New Appointment
-        </button>
-      </div>
+      <PageHeader
+        title="Appointments"
+        lastRefresh={lastRefresh}
+        isRefreshing={isRefreshing}
+        onRefresh={refresh}
+        actions={
+          <button className="btn btn-primary" onClick={() => { setForm({ date: date, status: 'scheduled' }); setModalOpen(true); }}>
+            <Icon icon={HiOutlinePlus} size={16} /> New Appointment
+          </button>
+        }
+      />
 
       <div className="filters">
         <div className="search-box">
-          🔍
+          <Icon icon={HiOutlineMagnifyingGlass} size={16} />
           <input placeholder="Search visitor, company, employee..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         </div>
         <div className="filter-group">
-          📅
+          <Icon icon={HiOutlineCalendarDays} size={16} />
           <input type="date" value={date} onChange={(e) => { setDate(e.target.value); setPage(1); }} disabled={showAll} />
         </div>
         <label className="toggle-label">
@@ -109,34 +127,42 @@ const Appointments: React.FC = () => {
             <tr><th>Visitor</th><th>Company</th><th>Employee</th><th>Date</th><th>Time</th><th>Room</th><th>Badge</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {appointments.map((a) => (
-              <tr key={a.id}>
-                <td>
-                  <strong>{a.visitor_name}</strong>
-                  {a.visitor_phone && <><br /><small>{a.visitor_phone}</small></>}
-                </td>
-                <td>{a.visitor_company || '—'}</td>
-                <td>{a.employee_name}</td>
-                <td>{formatDate(a.date)}</td>
-                <td>{formatTime(a.start_time)} – {formatTime(a.end_time)}</td>
-                <td>{a.meeting_room || '—'}</td>
-                <td>{a.badge_number || '—'}</td>
-                <td>
-                  <select
-                    value={a.status}
-                    onChange={(e) => handleStatusChange(a.id, e.target.value)}
-                    className="status-select"
-                    style={{ borderColor: statusColors[a.status] }}
-                  >
-                    {statuses.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
-                  </select>
-                </td>
-                <td className="actions">
-                  <button className="icon-btn danger" onClick={() => handleDelete(a)} title="Delete">🗑️</button>
-                </td>
-              </tr>
-            ))}
-            {!loading && appointments.length === 0 && <tr><td colSpan={9} className="empty">No appointments found</td></tr>}
+            {loading ? (
+              <SkeletonTable cols={9} rows={6} />
+            ) : appointments.length === 0 ? (
+              <EmptyState message="No appointments found" colSpan={9} />
+            ) : (
+              appointments.map((a) => (
+                <tr key={a.id} className="clickable-row" onClick={() => setSelectedAppointment(a)}>
+                  <td>
+                    <strong>{a.visitor_name}</strong>
+                    {a.visitor_phone && <><br /><small>{a.visitor_phone}</small></>}
+                  </td>
+                  <td>{a.visitor_company || '—'}</td>
+                  <td>{a.employee_name}</td>
+                  <td>{formatDate(a.date)}</td>
+                  <td>{formatTime(a.start_time)} – {formatTime(a.end_time)}</td>
+                  <td>{a.meeting_room || '—'}</td>
+                  <td>{a.badge_number ? <span className="badge-number">{a.badge_number}</span> : '—'}</td>
+                  <td>
+                    <select
+                      value={a.status}
+                      onChange={(e) => handleStatusChange(e as any, a.id, e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="status-select"
+                      style={{ borderColor: statusColors[a.status] }}
+                    >
+                      {statuses.map((s) => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                    </select>
+                  </td>
+                  <td className="actions">
+                    <button className="icon-btn danger" onClick={(e) => handleDelete(e, a)} title="Delete">
+                      <Icon icon={HiOutlineTrash} size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -148,6 +174,8 @@ const Appointments: React.FC = () => {
           <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>Next</button>
         </div>
       )}
+
+      <AppointmentDetailModal appointment={selectedAppointment} onClose={() => setSelectedAppointment(null)} />
 
       <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)} title="New Appointment" width="550px">
         <div className="form-grid">

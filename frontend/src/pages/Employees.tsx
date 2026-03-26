@@ -1,7 +1,14 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getEmployees, createEmployee, updateEmployee, deleteEmployee, getDepartments } from '../api/endpoints';
 import type { Employee } from '../types';
 import Modal from '../components/Modal';
+import PageHeader from '../components/PageHeader';
+import StatusBadge from '../components/StatusBadge';
+import EmptyState from '../components/EmptyState';
+import { SkeletonTable } from '../components/Skeleton';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { HiOutlineMagnifyingGlass, HiOutlinePencilSquare, HiOutlineTrash, HiOutlinePlus } from 'react-icons/hi2';
+import { Icon } from '../components/Icon';
 import toast from 'react-hot-toast';
 
 const emptyForm: Partial<Employee> = { name: '', email: '', phone: '', department: '', designation: '', floor: '', is_active: true };
@@ -21,7 +28,7 @@ const Employees: React.FC = () => {
   const [editing, setEditing] = useState<Employee | null>(null);
   const [form, setForm] = useState<Partial<Employee>>(emptyForm);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const params: Record<string, string> = {};
     if (search) params.search = search;
@@ -30,12 +37,14 @@ const Employees: React.FC = () => {
     setEmployees(empRes.data);
     setDepartments(deptRes.data);
     setLoading(false);
-  };
+  }, [search, filterDept]);
 
-  useEffect(() => { fetchData(); }, [search, filterDept]);
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const { lastRefresh, isRefreshing, refresh } = useAutoRefresh(fetchData);
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setModalOpen(true); };
-  const openEdit = (emp: Employee) => { setEditing(emp); setForm(emp); setModalOpen(true); };
+  const openEdit = (e: React.MouseEvent, emp: Employee) => { e.stopPropagation(); setEditing(emp); setForm(emp); setModalOpen(true); };
 
   const handleSave = async () => {
     try {
@@ -53,7 +62,8 @@ const Employees: React.FC = () => {
     }
   };
 
-  const handleDelete = async (emp: Employee) => {
+  const handleDelete = async (e: React.MouseEvent, emp: Employee) => {
+    e.stopPropagation();
     if (!window.confirm(`Delete ${emp.name}? This will also delete their appointments.`)) return;
     try {
       await deleteEmployee(emp.id);
@@ -64,14 +74,21 @@ const Employees: React.FC = () => {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1>Employees ({employees.length})</h1>
-        <button className="btn btn-primary" onClick={openCreate}>+ Add Employee</button>
-      </div>
+      <PageHeader
+        title={`Employees (${employees.length})`}
+        lastRefresh={lastRefresh}
+        isRefreshing={isRefreshing}
+        onRefresh={refresh}
+        actions={
+          <button className="btn btn-primary" onClick={openCreate}>
+            <Icon icon={HiOutlinePlus} size={16} /> Add Employee
+          </button>
+        }
+      />
 
       <div className="filters">
         <div className="search-box">
-          🔍
+          <Icon icon={HiOutlineMagnifyingGlass} size={16} />
           <input placeholder="Search name, email, department..." value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <select value={filterDept} onChange={(e) => setFilterDept(e.target.value)}>
@@ -86,22 +103,31 @@ const Employees: React.FC = () => {
             <tr><th>Name</th><th>Email</th><th>Phone</th><th>Department</th><th>Designation</th><th>Floor</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
-            {employees.map((emp) => (
-              <tr key={emp.id} className={!emp.is_active ? 'inactive-row' : ''}>
-                <td><strong>{emp.name}</strong></td>
-                <td>{emp.email}</td>
-                <td>{emp.phone || '—'}</td>
-                <td><span className="dept-badge" style={{ backgroundColor: deptColors[emp.department] || '#888' }}>{emp.department}</span></td>
-                <td>{emp.designation || '—'}</td>
-                <td>{emp.floor || '—'}</td>
-                <td><span className={`badge ${emp.is_active ? 'green' : 'gray'}`}>{emp.is_active ? 'Active' : 'Inactive'}</span></td>
-                <td className="actions">
-                  <button className="icon-btn" onClick={() => openEdit(emp)} title="Edit">✏️</button>
-                  <button className="icon-btn danger" onClick={() => handleDelete(emp)} title="Delete">🗑️</button>
-                </td>
-              </tr>
-            ))}
-            {!loading && employees.length === 0 && <tr><td colSpan={8} className="empty">No employees found</td></tr>}
+            {loading ? (
+              <SkeletonTable cols={8} rows={6} />
+            ) : employees.length === 0 ? (
+              <EmptyState message="No employees found" colSpan={8} />
+            ) : (
+              employees.map((emp) => (
+                <tr key={emp.id} className={!emp.is_active ? 'inactive-row' : ''}>
+                  <td><strong>{emp.name}</strong></td>
+                  <td>{emp.email}</td>
+                  <td>{emp.phone || '—'}</td>
+                  <td><span className="dept-badge" style={{ backgroundColor: deptColors[emp.department] || '#888' }}>{emp.department}</span></td>
+                  <td>{emp.designation || '—'}</td>
+                  <td>{emp.floor || '—'}</td>
+                  <td><span className={`badge ${emp.is_active ? 'green' : 'gray'}`}>{emp.is_active ? 'Active' : 'Inactive'}</span></td>
+                  <td className="actions">
+                    <button className="icon-btn" onClick={(e) => openEdit(e, emp)} title="Edit">
+                      <Icon icon={HiOutlinePencilSquare} size={16} />
+                    </button>
+                    <button className="icon-btn danger" onClick={(e) => handleDelete(e, emp)} title="Delete">
+                      <Icon icon={HiOutlineTrash} size={16} />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\EmployeeController;
 use App\Http\Controllers\Api\AppointmentController;
 use App\Http\Controllers\Api\VisitorController;
+use App\Http\Controllers\Api\ReportController;
 
 // Public auth routes
 Route::post('/login', [AuthController::class, 'login']);
@@ -30,6 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // Visitors
     Route::patch('/visitors/{id}/checkout', [VisitorController::class, 'checkout']);
     Route::apiResource('visitors', VisitorController::class);
+
+    // Reports
+    Route::get('/reports/stats', [ReportController::class, 'stats']);
+    Route::get('/reports/export', [ReportController::class, 'exportCsv']);
 });
 
 // Debug: check filesystem (TEMPORARY - remove after fixing)

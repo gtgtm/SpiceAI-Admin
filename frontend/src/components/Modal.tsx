@@ -1,4 +1,6 @@
 import React, { ReactNode } from 'react';
+import { HiXMark } from 'react-icons/hi2';
+import { Icon } from './Icon';
 
 interface ModalProps {
   isOpen: boolean;
@@ -16,7 +18,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, width =
       <div className="modal-content" style={{ maxWidth: width }} onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <h3>{title}</h3>
-          <button onClick={onClose} className="modal-close">✕</button>
+          <button onClick={onClose} className="modal-close">
+            <Icon icon={HiXMark} size={20} />
+          </button>
         </div>
         <div className="modal-body">{children}</div>
       </div>

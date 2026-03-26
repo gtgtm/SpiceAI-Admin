@@ -1,6 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { getDashboardStats } from '../api/endpoints';
 import type { DashboardStats } from '../types';
+import PageHeader from '../components/PageHeader';
+import StatusBadge from '../components/StatusBadge';
+import { useAutoRefresh } from '../hooks/useAutoRefresh';
+import { SkeletonCard } from '../components/Skeleton';
+import { HiOutlineCalendarDays, HiOutlineIdentification, HiOutlineUserGroup, HiOutlineBuildingOffice2 } from 'react-icons/hi2';
+import { Icon } from '../components/Icon';
 
 const statusColors: Record<string, string> = {
   scheduled: '#3b82f6', confirmed: '#22c55e', in_progress: '#f59e0b',
@@ -12,140 +18,160 @@ const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getDashboardStats().then((r) => { setStats(r.data); setLoading(false); });
+  const fetchData = useCallback(async () => {
+    const r = await getDashboardStats();
+    setStats(r.data);
+    setLoading(false);
   }, []);
 
-  if (loading) return <div className="page-loading">Loading dashboard...</div>;
-  if (!stats) return null;
+  useEffect(() => { fetchData(); }, [fetchData]);
+
+  const { lastRefresh, isRefreshing, refresh } = useAutoRefresh(fetchData);
 
   const formatTime = (dt: string) => new Date(dt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' });
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1>Dashboard</h1>
-        <span className="date-label">{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
-      </div>
+      <PageHeader
+        title="Dashboard"
+        subtitle={new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        lastRefresh={lastRefresh}
+        isRefreshing={isRefreshing}
+        onRefresh={refresh}
+      />
 
       {/* Stat Cards */}
-      <div className="stat-grid">
-        <div className="stat-card red">
-          <div className="stat-icon">📅</div>
-          <div className="stat-info">
-            <span className="stat-value">{stats.appointments.total}</span>
-            <span className="stat-label">Today's Appointments</span>
+      {loading ? (
+        <div className="stat-grid">
+          <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
+        </div>
+      ) : stats && (
+        <div className="stat-grid">
+          <div className="stat-card red">
+            <div className="stat-icon"><Icon icon={HiOutlineCalendarDays} size={24} /></div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.appointments.total}</span>
+              <span className="stat-label">Today's Appointments</span>
+            </div>
+          </div>
+          <div className="stat-card green">
+            <div className="stat-icon"><Icon icon={HiOutlineIdentification} size={24} /></div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.visitors.total}</span>
+              <span className="stat-label">Today's Visitors</span>
+            </div>
+          </div>
+          <div className="stat-card blue">
+            <div className="stat-icon"><Icon icon={HiOutlineUserGroup} size={24} /></div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.employees.active}</span>
+              <span className="stat-label">Active Employees</span>
+            </div>
+          </div>
+          <div className="stat-card yellow">
+            <div className="stat-icon"><Icon icon={HiOutlineBuildingOffice2} size={24} /></div>
+            <div className="stat-info">
+              <span className="stat-value">{stats.visitors.checked_in + stats.visitors.in_meeting}</span>
+              <span className="stat-label">Currently In Office</span>
+            </div>
           </div>
         </div>
-        <div className="stat-card green">
-          <div className="stat-icon">🪪</div>
-          <div className="stat-info">
-            <span className="stat-value">{stats.visitors.total}</span>
-            <span className="stat-label">Today's Visitors</span>
-          </div>
-        </div>
-        <div className="stat-card blue">
-          <div className="stat-icon">👥</div>
-          <div className="stat-info">
-            <span className="stat-value">{stats.employees.active}</span>
-            <span className="stat-label">Active Employees</span>
-          </div>
-        </div>
-        <div className="stat-card yellow">
-          <div className="stat-icon">🏢</div>
-          <div className="stat-info">
-            <span className="stat-value">{stats.visitors.checked_in + stats.visitors.in_meeting}</span>
-            <span className="stat-label">Currently In Office</span>
-          </div>
-        </div>
-      </div>
+      )}
 
-      {/* Appointment Status Breakdown */}
-      <div className="card-grid">
-        <div className="card">
-          <h3>Appointment Status</h3>
-          <div className="status-bars">
-            {Object.entries(stats.appointments).filter(([k]) => k !== 'total').map(([key, val]) => (
-              <div key={key} className="status-bar-row">
-                <span className="status-label">{key.replace('_', ' ')}</span>
-                <div className="status-bar-track">
-                  <div className="status-bar-fill" style={{
-                    width: `${stats.appointments.total ? (val / stats.appointments.total) * 100 : 0}%`,
-                    backgroundColor: statusColors[key] || '#888',
-                  }} />
-                </div>
-                <span className="status-count">{val}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="card">
-          <h3>Visitor Status</h3>
-          <div className="status-bars">
-            {Object.entries(stats.visitors).filter(([k]) => k !== 'total').map(([key, val]) => (
-              <div key={key} className="status-bar-row">
-                <span className="status-label">{key.replace('_', ' ')}</span>
-                <div className="status-bar-track">
-                  <div className="status-bar-fill" style={{
-                    width: `${stats.visitors.total ? (val / stats.visitors.total) * 100 : 0}%`,
-                    backgroundColor: statusColors[key] || '#888',
-                  }} />
-                </div>
-                <span className="status-count">{val}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Activity */}
-      <div className="card-grid">
-        <div className="card">
-          <h3>Recent Appointments</h3>
-          <div className="table-wrapper">
-            <table>
-              <thead><tr><th>Visitor</th><th>Employee</th><th>Time</th><th>Status</th></tr></thead>
-              <tbody>
-                {stats.recent_appointments.map((a) => (
-                  <tr key={a.id}>
-                    <td><strong>{a.visitor_name}</strong><br/><small>{a.visitor_company}</small></td>
-                    <td>{a.employee_name}</td>
-                    <td>{formatTime(a.start_time)}</td>
-                    <td><span className="badge" style={{ backgroundColor: statusColors[a.status] }}>{a.status}</span></td>
-                  </tr>
+      {stats && (
+        <>
+          {/* Status Breakdown */}
+          <div className="card-grid">
+            <div className="card">
+              <h3>Appointment Status</h3>
+              <div className="status-bars">
+                {Object.entries(stats.appointments).filter(([k]) => k !== 'total').map(([key, val]) => (
+                  <div key={key} className="status-bar-row">
+                    <span className="status-label">{key.replace('_', ' ')}</span>
+                    <div className="status-bar-track">
+                      <div className="status-bar-fill" style={{
+                        width: `${stats.appointments.total ? (val / stats.appointments.total) * 100 : 0}%`,
+                        backgroundColor: statusColors[key] || '#888',
+                      }} />
+                    </div>
+                    <span className="status-count">{val}</span>
+                  </div>
                 ))}
-                {stats.recent_appointments.length === 0 && <tr><td colSpan={4} className="empty">No appointments today</td></tr>}
-              </tbody>
-            </table>
-          </div>
-        </div>
+              </div>
+            </div>
 
-        <div className="card">
-          <h3>Recent Visitors</h3>
-          <div className="table-wrapper">
-            <table>
-              <thead><tr><th>Visitor</th><th>Badge</th><th>Check-in</th><th>Status</th></tr></thead>
-              <tbody>
-                {stats.recent_visitors.map((v) => (
-                  <tr key={v.id}>
-                    <td><strong>{v.name}</strong><br/><small>{v.company}</small></td>
-                    <td>{v.badge_number}</td>
-                    <td>{formatTime(v.check_in_time)}</td>
-                    <td><span className="badge" style={{ backgroundColor: statusColors[v.status] }}>{v.status.replace('_', ' ')}</span></td>
-                  </tr>
+            <div className="card">
+              <h3>Visitor Status</h3>
+              <div className="status-bars">
+                {Object.entries(stats.visitors).filter(([k]) => k !== 'total').map(([key, val]) => (
+                  <div key={key} className="status-bar-row">
+                    <span className="status-label">{key.replace('_', ' ')}</span>
+                    <div className="status-bar-track">
+                      <div className="status-bar-fill" style={{
+                        width: `${stats.visitors.total ? (val / stats.visitors.total) * 100 : 0}%`,
+                        backgroundColor: statusColors[key] || '#888',
+                      }} />
+                    </div>
+                    <span className="status-count">{val}</span>
+                  </div>
                 ))}
-                {stats.recent_visitors.length === 0 && <tr><td colSpan={4} className="empty">No visitors today</td></tr>}
-              </tbody>
-            </table>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* All-Time Stats */}
-      <div className="all-time-stats">
-        <span>All Time: <strong>{stats.all_time.total_appointments}</strong> appointments &middot; <strong>{stats.all_time.total_visitors}</strong> visitors &middot; <strong>{stats.employees.total}</strong> employees</span>
-      </div>
+          {/* Recent Activity */}
+          <div className="card-grid">
+            <div className="card">
+              <h3>Recent Appointments</h3>
+              <div className="table-wrapper">
+                <table>
+                  <thead><tr><th>Visitor</th><th>Employee</th><th>Time</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {stats.recent_appointments.map((a) => (
+                      <tr key={a.id}>
+                        <td><strong>{a.visitor_name}</strong><br/><small>{a.visitor_company}</small></td>
+                        <td>{a.employee_name}</td>
+                        <td>{formatTime(a.start_time)}</td>
+                        <td><StatusBadge status={a.status} /></td>
+                      </tr>
+                    ))}
+                    {stats.recent_appointments.length === 0 && (
+                      <tr><td colSpan={4} className="empty">No appointments today</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div className="card">
+              <h3>Recent Visitors</h3>
+              <div className="table-wrapper">
+                <table>
+                  <thead><tr><th>Visitor</th><th>Badge</th><th>Check-in</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {stats.recent_visitors.map((v) => (
+                      <tr key={v.id}>
+                        <td><strong>{v.name}</strong><br/><small>{v.company}</small></td>
+                        <td><span className="badge-number">{v.badge_number}</span></td>
+                        <td>{formatTime(v.check_in_time)}</td>
+                        <td><StatusBadge status={v.status} /></td>
+                      </tr>
+                    ))}
+                    {stats.recent_visitors.length === 0 && (
+                      <tr><td colSpan={4} className="empty">No visitors today</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          {/* All-Time Stats */}
+          <div className="all-time-stats">
+            <span>All Time: <strong>{stats.all_time.total_appointments}</strong> appointments &middot; <strong>{stats.all_time.total_visitors}</strong> visitors &middot; <strong>{stats.employees.total}</strong> employees</span>
+          </div>
+        </>
+      )}
     </div>
   );
 };
