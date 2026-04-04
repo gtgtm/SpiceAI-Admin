@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/static/css/main.114f459f.css",
-    "main.js": "/static/js/main.90b18631.js",
-    "static/js/453.64aababc.chunk.js": "/static/js/453.64aababc.chunk.js",
-    "index.html": "/index.html",
-    "main.114f459f.css.map": "/static/css/main.114f459f.css.map",
-    "main.90b18631.js.map": "/static/js/main.90b18631.js.map",
-    "453.64aababc.chunk.js.map": "/static/js/453.64aababc.chunk.js.map"
+    "main.css": "/SpiceAI-Admin/admin/static/css/main.114f459f.css",
+    "main.js": "/SpiceAI-Admin/admin/static/js/main.36bb49a4.js",
+    "static/js/453.64aababc.chunk.js": "/SpiceAI-Admin/admin/static/js/453.64aababc.chunk.js",
+    "index.html": "/SpiceAI-Admin/admin/index.html",
+    "main.114f459f.css.map": "/SpiceAI-Admin/admin/static/css/main.114f459f.css.map",
+    "main.36bb49a4.js.map": "/SpiceAI-Admin/admin/static/js/main.36bb49a4.js.map",
+    "453.64aababc.chunk.js.map": "/SpiceAI-Admin/admin/static/js/453.64aababc.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.114f459f.css",
-    "static/js/main.90b18631.js"
+    "static/js/main.36bb49a4.js"
   ]
 }

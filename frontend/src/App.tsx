@@ -14,7 +14,7 @@ import './App.css';
 function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
+      <BrowserRouter basename="/SpiceAI-Admin/admin">
         <Toaster position="top-right" />
         <Routes>
           <Route path="/login" element={<Login />} />
