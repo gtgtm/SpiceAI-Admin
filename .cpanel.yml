@@ -1,0 +1,16 @@
+---
+deployment:
+  tasks:
+    # Install PHP dependencies (no dev, optimized)
+    - composer install --no-dev --optimize-autoloader --quiet
+    # Clear old cached config
+    - php artisan config:clear
+    - php artisan route:clear
+    - php artisan view:clear
+    # Cache config/routes for production speed
+    - php artisan config:cache
+    - php artisan route:cache
+    # Fix storage permissions
+    - chmod -R 775 storage bootstrap/cache
+    # Copy public files to the web-accessible folder
+    - cp -r public/. ../public_html/admin/
