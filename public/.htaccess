@@ -4,7 +4,7 @@
     </IfModule>
 
     RewriteEngine On
-    RewriteBase /SpiceAI-Admin/admin
+    RewriteBase /SpiceAI-Admin
 
     # Handle Authorization Header
     RewriteCond %{HTTP:Authorization} .
@@ -21,7 +21,7 @@
     RewriteRule ^ - [L]
 
     # API routes → Laravel
-    RewriteCond %{REQUEST_URI} ^/api
+    RewriteCond %{REQUEST_URI} ^/SpiceAI-Admin/api
     RewriteRule ^ index.php [L]
 
     # If file or directory exists, serve it directly (CSS, JS, images)

@@ -21,7 +21,7 @@ client.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      window.location.href = '/SpiceAI-Admin/admin/login';
+      window.location.href = '/SpiceAI-Admin/login';
     }
     return Promise.reject(err);
   }
