@@ -35,6 +35,7 @@
       "react-app/jest"
     ]
   },
+  "homepage": "/SpiceAI-Admin",
   "proxy": "http://localhost:8000",
   "browserslist": {
     "production": [
