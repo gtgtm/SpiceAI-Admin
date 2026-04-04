@@ -10,7 +10,8 @@ deployment:
     # Cache config/routes for production speed
     - php artisan config:cache
     - php artisan route:cache
-    # Fix storage permissions
+    # Fix all file and folder permissions
+    - find . -type f -exec chmod 644 {} \;
+    - find . -type d -exec chmod 755 {} \;
+    # Storage and cache need write permission
     - chmod -R 775 storage bootstrap/cache
-    # Copy public files to the web-accessible folder
-    - cp -r public/. ../public_html/admin/
